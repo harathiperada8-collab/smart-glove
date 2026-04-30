@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palm Pilot — Smart Glove</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --accent: #7c5cfc;
+    --accent2: #c084fc;
+    --green: #22d3a5;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --text: #f0eeff;
+    --muted: #6b6b8a;
+    --border: rgba(124,92,252,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,92,252,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,92,252,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow {
+    position: fixed;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,92,252,0.12) 0%, transparent 70%);
+    top: -100px; left: -100px;
+    pointer-events: none;
+    z-index: 0;
+    animation: glowMove 8s ease-in-out infinite alternate;
+  }
+  @keyframes glowMove {
+    from { transform: translate(0,0); }
+    to { transform: translate(200px, 150px); }
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.5s ease both;
+  }
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo svg { width: 26px; height: 26px; }
+  .header-text h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-text p { font-size: 13px; color: var(--muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
+
+  /* Status pill */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.connecting { background: var(--amber); animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .status-label { flex: 1; color: var(--muted); }
+  .status-label.connected { color: var(--green); }
+  .device-tag {
+    font-size: 11px;
+    background: rgba(124,92,252,0.15);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 100px;
+    display: none;
+  }
+  .device-tag.show { display: inline; }
+
+  /* Buttons */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.5s 0.15s ease both;
+  }
+  .btn {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn:hover:not(:disabled) { background: var(--surface2); border-color: var(--accent); }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    grid-column: span 2;
+    font-size: 15px;
+    padding: 14px;
+  }
+  .btn.primary:hover:not(:disabled) { background: #9370ff; border-color: #9370ff; }
+
+  .btn-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.75rem;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+
+  /* Error */
+  .err {
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 1.25rem;
+    font-family: 'Space Mono', monospace;
+    display: none;
+  }
+  .err.show { display: block; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1.75rem;
+    animation: fadeUp 0.5s 0.25s ease both;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: 24px;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent2);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); }
+
+  /* Voice toggle */
+  .voice-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    animation: fadeUp 0.5s 0.3s ease both;
+  }
+  .voice-label { font-size: 14px; font-weight: 700; }
+  .voice-sub { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle-knob {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: left 0.2s;
+  }
+  .toggle.on .toggle-knob { left: 22px; }
+
+  /* Speaking bar */
+  .speaking {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(124,92,252,0.1);
+    border: 1px solid rgba(124,92,252,0.25);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 1rem;
+    animation: fadeUp 0.3s ease both;
+  }
+  .speaking.show { display: flex; }
+  .bars { display: flex; gap: 3px; align-items: center; }
+  .bars span {
+    width: 3px; border-radius: 2px;
+    background: var(--accent2);
+    animation: barUp 0.7s infinite;
+  }
+  .bars span:nth-child(1){ height: 8px; animation-delay:0s; }
+  .bars span:nth-child(2){ height: 14px; animation-delay:0.12s; }
+  .bars span:nth-child(3){ height: 10px; animation-delay:0.24s; }
+  .bars span:nth-child(4){ height: 6px; animation-delay:0.36s; }
+  @keyframes barUp { 0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1.4)} }
+
+  /* Log */
+  .log-section { animation: fadeUp 0.5s 0.35s ease both; }
+  .log-title {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .log-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    height: 280px;
+    overflow-y: auto;
+    padding: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .log-box::-webkit-scrollbar { width: 4px; }
+  .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-empty {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+    margin-top: 5rem;
+  }
+  .log-entry {
+    display: flex;
+    gap: 10px;
+    padding: 8px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    animation: fadeIn 0.2s ease;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+  .log-ts {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding-top: 2px;
+    min-width: 60px;
+  }
+  .log-msg {
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .log-msg.highlight { color: var(--accent2); }
+
+  /* Browser warning */
+  .warn {
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--amber);
+    margin-bottom: 1.25rem;
+    font-family: 'Space Mono', monospace;
+    line-height: 1.6;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/>
+        <path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/>
+        <path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/>
+        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Palm Pilot</h1>
+      <p>Smart Glove Receiver</p>
+    </div>
+  </div>
+
+  <div id="browserWarn" class="warn" style="display:none">
+    ⚠ Web Bluetooth requires Chrome or Edge. Open this page in Chrome on Android or Edge/Chrome on desktop.
+  </div>
+
+  <div class="status-pill">
+    <div class="dot" id="dot"></div>
+    <span class="status-label" id="statusLabel">Not connected</span>
+    <span class="device-tag" id="deviceTag"></span>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <div class="btn-row">
+    <button class="btn primary" id="connectBtn" onclick="connectBLE()">Connect Glove</button>
+  </div>
+  <div class="btn-row2">
+    <button class="btn" id="disconnectBtn" onclick="disconnectBLE()" disabled>Disconnect</button>
+    <button class="btn" onclick="testVoice()">Test Voice</button>
+    <button class="btn" onclick="clearLog()" style="grid-column:span 2">Clear Log</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-val" id="countVal">0</span>
+      <div class="stat-label">Received</div>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="lastVal" style="font-size:13px; padding-top:5px;">—</span>
+      <div class="stat-label">Last data</div>
+    </div>
+    <div class="stat">
+      <span class="stat-val" id="uptimeVal">—</span>
+      <div class="stat-label">Uptime</div>
+    </div>
+  </div>
+
+  <div class="voice-row">
+    <div>
+      <div class="voice-label">Read Aloud</div>
+      <div class="voice-sub" id="voiceSub">on — every message spoken</div>
+    </div>
+    <div class="toggle on" id="voiceToggle" onclick="toggleVoice()">
+      <div class="toggle-knob"></div>
+    </div>
+  </div>
+
+  <div class="speaking" id="speakBar">
+    <div class="bars"><span></span><span></span><span></span><span></span></div>
+    Speaking…
+  </div>
+
+  <div class="log-section">
+    <div class="log-title">Live Data Log</div>
+    <div class="log-box" id="logBox">
+      <div class="log-empty">Connect your glove to start</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SVC  = '6e400001-b5b2-4896-9153-4ced4b4fbfa6';
+  const CHAR = '6e400003-b5b2-4896-9153-4ced4b4fbfa6';
+
+  let device = null, char = null;
+  let voiceOn = true, count = 0, connectedAt = null;
+  const synth = window.speechSynthesis;
+
+  const $ = id => document.getElementById(id);
+
+  if (!navigator.bluetooth) {
+    $('browserWarn').style.display = 'block';
+    $('connectBtn').disabled = true;
+  }
+
+  function toggleVoice() {
+    voiceOn = !voiceOn;
+    $('voiceToggle').classList.toggle('on', voiceOn);
+    $('voiceSub').textContent = voiceOn ? 'on — every message spoken' : 'off';
+  }
+
+  function setStatus(state, text, name) {
+    $('dot').className = 'dot' + (state === 'connected' ? ' connected' : state === 'connecting' ? ' connecting' : '');
+    const lbl = $('statusLabel');
+    lbl.textContent = text;
+    lbl.className = 'status-label' + (state === 'connected' ? ' connected' : '');
+    const tag = $('deviceTag');
+    if (name) { tag.textContent = name; tag.classList.add('show'); }
+    else { tag.classList.remove('show'); }
+  }
+
+  function showErr(msg) {
+    const b = $('errBox');
+    b.textContent = '⚠ ' + msg;
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 7000);
+  }
+
+  function addLog(msg, highlight) {
+    count++;
+    $('countVal').textContent = count;
+    const short = msg.length > 16 ? msg.slice(0,16)+'…' : msg;
+    $('lastVal').textContent = short;
+    const box = $('logBox');
+    const empty = box.querySelector('.log-empty');
+    if (empty) empty.remove();
+    const t = new Date().toLocaleTimeString('en-IN',{hour12:false});
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    el.innerHTML = `<span class="log-ts">${t}</span><span class="log-msg${highlight?' highlight':''}">${esc(msg)}</span>`;
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    if (voiceOn && !highlight) speak(msg);
+  }
+
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function speak(text) {
+    if (!synth) return;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-IN'; u.rate = 0.9;
+    u.onstart = () => $('speakBar').classList.add('show');
+    u.onend = u.onerror = () => $('speakBar').classList.remove('show');
+    synth.speak(u);
+  }
+
+  function testVoice() { speak('Smart Glove connected. Ready to receive data.'); }
+
+  function clearLog() {
+    $('logBox').innerHTML = '<div class="log-empty">Log cleared</div>';
+    count = 0; $('countVal').textContent = '0';
+    $('lastVal').textContent = '—'; $('uptimeVal').textContent = '—';
+    connectedAt = device ? new Date() : null;
+  }
+
+  setInterval(() => {
+    if (!connectedAt) return;
+    const s = Math.floor((Date.now() - connectedAt)/1000);
+    $('uptimeVal').textContent = s < 60 ? s+'s' : Math.floor(s/60)+'m';
+  }, 1000);
+
+  async function connectBLE() {
+    if (!navigator.bluetooth) return;
+    setStatus('connecting','Scanning…');
+    $('connectBtn').disabled = true;
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { services: [SVC] },
+          { name: 'SmartGlove' },
+          { namePrefix: 'ESP32' },
+          { namePrefix: 'Glove' }
+        ],
+        optionalServices: [SVC]
+      });
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SVC);
+      char = await service.getCharacteristic(CHAR);
+      await char.startNotifications();
+      char.addEventListener('characteristicvaluechanged', onData);
+      connectedAt = new Date();
+      setStatus('connected','Connected', device.name || 'ESP32');
+      $('disconnectBtn').disabled = false;
+      addLog('[Connected to ' + (device.name||'device') + ']', true);
+      speak('Glove connected. Receiving data.');
+    } catch(e) {
+      setStatus('','Not connected');
+      $('connectBtn').disabled = false;
+      if (e.name !== 'NotFoundError') showErr(e.message);
+    }
+  }
+
+  function onData(e) {
+    const text = new TextDecoder().decode(e.target.value).trim();
+    if (text) addLog(text, false);
+  }
+
+  function onDisconnected() {
+    setStatus('','Disconnected');
+    $('connectBtn').disabled = false;
+    $('disconnectBtn').disabled = true;
+    addLog('[Disconnected]', true);
+    connectedAt = null; char = null; device = null;
+  }
+
+  function disconnectBLE() {
+    if (device && device.gatt.connected) device.gatt.disconnect();
+  }
+</script>
+</body>
+</html>
